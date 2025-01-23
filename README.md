@@ -21,11 +21,13 @@ from color_condition import ColorCondition, Painter
 ```
 
 `ColorCondition` contains:
-- type (`row` or `column` depends which type of array you want to iterate through)
-- args (`index` `item` `array` and `extra`)
+- type (`row` or `column`), depends on which type of array you want to iterate through
+- args (`index` `item` `array` or `extra`), you can choose among them to construct condition method like you want
+- method - function which takes arguments from `args` and returns boolean value
+- color (currently only `red`)
+- style (currently only `bold`)
 
 ```python
-
 condition = ColorCondition(
     type='row',
     args='array',
@@ -33,8 +35,21 @@ condition = ColorCondition(
     color='red',
     style='bold'
 )
-painter = Painter([condition])
+```
 
+`Painter` class combine `ColorCondition` objects and enables to paint strings
+
+```python
+painter = Painter([condition])
+```
+
+`createTable` method contains:
+- columnLabels
+- rowLabels
+- rows or columns
+- painter
+
+```python
 table = createTable(
     columnLabels=['Id', 'First name', 'Last name', 'Favourite Color'],
     rowLabels=['Row1', 'Row2', 'Row3', 'Row4', 'Row5'],
@@ -47,6 +62,10 @@ table = createTable(
     ],
     painter=painter
 )
+```
 
+Table display
+
+```python
 print(table)
 ```
