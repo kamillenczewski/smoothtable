@@ -2,14 +2,14 @@
 
 My work is inspired by https://github.com/nirum/tableprint 
 
-## About 
+## Table of Contents
+-   [About](#%EF%B8%8F-about)
+-   [Usage](#-usage)
+
+## ⚛️ About 
 `smoothtable` lets you display rows and columns in user-friendly style. 
 Moreover you can create color conditions using `ColorCondition` class to 
 emphasize visibility of specific values in your data sets
-
-## Table of Contents
--   [About](#-about)
-
 
 ## 🏃 Usage
 
@@ -23,7 +23,7 @@ from color_condition import ColorCondition, Painter
 `ColorCondition` contains:
 - type (`row` or `column`), depends on which type of array you want to iterate through
 - args (`index` `item` `array` or `extra`), you can choose among them to construct condition method like you want
-- method - function which takes arguments from `args` and returns boolean value
+- method - takes arguments from `args` and returns boolean value
 - color (currently only `red`)
 - style (currently only `bold`)
 
