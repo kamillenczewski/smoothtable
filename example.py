@@ -22,4 +22,9 @@ table = createTable(
     ],
     painter=painter
 )
+
+# Painter.paint -> createPaintMesh -> array which has color is speicfic positions
+# and then we can jsut concat it so the condtion method will iterate through real objects
+# not strings
+
 print(table)
