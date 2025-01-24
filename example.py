@@ -1,14 +1,37 @@
 from table import createTable
-from color_condition import ColorCondition, Painter
+from color_condition import ColorCondition
+from painter import Painter
 
-condition = ColorCondition(
+# TO DO
+# priorities for conditions to have control
+# on which condition is more important than the other one
+
+# Painter.paint -> createPaintMesh -> array which has color is speicfic positions
+# and then we can jsut concat it so the condtion method will iterate through real objects
+# not strings
+
+# add possibility to create table with labels only in specfic location
+# for example having columns id, name, fcolor we want to display
+# id column but not the label for it
+
+condition1 = ColorCondition(
     type='row',
     args='array',
     method=lambda array: array[1].strip().endswith('a'),
     color='red',
     style='bold'
 )
-painter = Painter([condition])
+
+condition2 = ColorCondition(
+    type='column',
+    args='array',
+    method=lambda array: array[0].strip() == 'Kamil',
+    color='yellow',
+    style='bold'
+)
+
+
+painter = Painter([condition1, condition2])
 
 table = createTable(
     columnLabels=['Id', 'First name', 'Last name', 'Favourite Color'],
@@ -22,9 +45,5 @@ table = createTable(
     ],
     painter=painter
 )
-
-# Painter.paint -> createPaintMesh -> array which has color is speicfic positions
-# and then we can jsut concat it so the condtion method will iterate through real objects
-# not strings
 
 print(table)
