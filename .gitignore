@@ -1,2 +1,5 @@
 /__pycache__
 sandbox.py
+/smoothtable.egg-info
+/dist
+/build
