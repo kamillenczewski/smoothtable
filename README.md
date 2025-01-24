@@ -11,9 +11,13 @@ My work is inspired by https://github.com/nirum/tableprint
 Moreover you can create color conditions using `ColorCondition` class to 
 emphasize visibility of specific values in your data sets
 
+![Example output](https://github.com/kamillenczewski/smoothtable/blob/main/example.png)
+
 ## 🏃 Usage
 
-Importing needed stuff
+This section explains how to create table showed above
+
+Needed import statements
 
 ```python
 from table import createTable
