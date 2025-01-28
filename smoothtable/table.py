@@ -1,6 +1,11 @@
 from typing import Iterable
 
-from utils import rowsToColumns, stringifyColumns, leftConcat
+from .utils import (
+    rowsToColumns, stringifyColumns, leftConcat, 
+    adjustColumns, adjustLabels, adjustLabelsGen
+)
+
+from .painter import Painter
 
 HORIZONTAL_LINE = '─'
 
@@ -42,20 +47,7 @@ def maxStringLengthGen(columns):
         biggestLength = len(longestString)
         yield biggestLength
 
-def adjustLabels(labels, lengths):
-    if isinstance(lengths, int):
-        lengths = [lengths for _ in range(len(labels))]
 
-    for label, wantedLength in zip(labels, lengths):
-        yield label.ljust(wantedLength, SPACE)
-
-def adjustColumn(column, stringLength):
-    for item in column:
-        yield item.ljust(stringLength, SPACE)
-
-def adjustColumns(columns, maxTextLentghs):
-    for column, maxLength in zip(columns, maxTextLentghs):
-        yield list(adjustColumn(column, maxLength))
 
 
 def mergeLabelsAndColumnsGen(labels, columns):
@@ -134,30 +126,35 @@ def createTable(columnLabels: Iterable[str],
                 rowLabels=None, 
                 columns=None, 
                 rows=None, 
-                painter=None):
+                painter: Painter=None):
 
     validateArgs(columnLabels, rowLabels, columns, rows, painter)
 
     if rows:
         columns = rowsToColumns(rows)
 
-    columns = stringifyColumns(columns)
+    columnsAmount = len(columns)
+    columnSize = len(columns[0])
 
-    labelsAndColumns = mergeLabelsAndColumnsGen(columnLabels, columns)
+    colorMesh = painter.createMesh(columns, columnsAmount, columnSize)
+
+    stringifiedColumns = stringifyColumns(columns)
+
+    labelsAndColumns = mergeLabelsAndColumnsGen(columnLabels, stringifiedColumns)
     maxTextLentghs = list(maxStringLengthGen(labelsAndColumns))
     separationLines = [length * HORIZONTAL_LINE for length in maxTextLentghs]
 
     columnLabels = list(adjustLabels(columnLabels, maxTextLentghs))
-    columns = list(adjustColumns(columns, maxTextLentghs))
+    stringifiedColumns = list(adjustColumns(stringifiedColumns, maxTextLentghs))
 
     if painter:
-       columns = painter.paint(columns)
+       stringifiedColumns = painter.applyMesh(stringifiedColumns, colorMesh)
 
     areRowLabels = rowLabels != None
     areColumnLabels = columnLabels != None
 
     columnLabelsStringLines = createColumnLabelsStringLines(columnLabels, separationLines, areRowLabels)
-    rowsStringLines = createRowsStringLines(columns)
+    rowsStringLines = createRowsStringLines(stringifiedColumns)
     endSegment = createEndSegment(separationLines, areRowLabels)
     
     allLines = columnLabelsStringLines + rowsStringLines + [endSegment]
@@ -175,7 +172,7 @@ def createRowLabelsStringLines(rowLabels):
             yield LEFT_VERTICAL_LINE + label + SPACE
 
     maxLength = len(max(rowLabels, key=len))
-    labels = adjustLabels(rowLabels, maxLength)
+    labels = adjustLabelsGen(rowLabels, maxLength)
 
     spaceLines = [(maxLength + 3) * SPACE] * 2
 

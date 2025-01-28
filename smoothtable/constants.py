@@ -12,3 +12,5 @@ COLORS = {
 TEXT_STYLES = {
     "bold": '\033[01m'
 }
+
+SPACE = ' '

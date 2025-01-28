@@ -1,22 +1,46 @@
 from typing import Iterable
-from color_condition import ColorCondition
-from extra_variable import ExtraVariable
-from utils import columnsToRowsGen, rowsToColumns
-from constants import COLORS, TEXT_STYLES
 
+from .color_condition import ColorCondition
+from .extra_variable import ExtraVariable
+from .utils import columnsToRowsGen, rowsToColumns, returnList, columnsToRows
+from .constants import COLORS, TEXT_STYLES
+
+
+
+
+class ColorItem:
+    def __init__(self, color=None, style=None):
+        self.color = color
+        self.style = style
+
+    def isEmpty(self):
+        return not self.color and not self.style
 
 def paintString(string, color, style):
-    color = COLORS[color]
-    style = TEXT_STYLES[style]
+    color = COLORS[color] if color else ""
+    style = TEXT_STYLES[style] if style else ""
+
     string = color + style + "{}\033[0m".format(string)
+
     return string
+
+@returnList
+def emptyColumnMesh(size):
+    for _ in range(size):
+        yield ColorItem()
+
+@returnList
+def emptyColumnsMesh(columnsAmount, columnSize):
+    for _ in range(columnsAmount):
+        yield emptyColumnMesh(columnSize)
 
 
 class Painter:
     def __init__(self, colorConditions: Iterable[ColorCondition]):
-        self.colorConditions = colorConditions
+        self.colorConditions = colorConditions        
 
-    def paintArray(self, array, condition: ColorCondition):
+    @returnList
+    def createColumnColorMesh(self, condition, array):
         extra = ExtraVariable()
 
         if condition.initMethod:
@@ -26,30 +50,64 @@ class Painter:
             args = [locals()[argName] for argName in condition.args]
 
             if condition.method(*args):
-                yield paintString(item, condition.color, condition.style)
+                yield ColorItem(condition.color, condition.style)
             else:
-                yield item           
-    
+                yield ColorItem()
 
-    def paintArrays(self, arrays, condition: ColorCondition):
-        for array in arrays:
-            yield list(self.paintArray(array, condition))
+    @returnList
+    def createColorMesh(self, condition, columns):
+        for column in columns:
+            yield self.createColumnColorMesh(condition, column)
 
-    def paint(self, columns):
+    @returnList
+    def createColorMeshes(self, arrays):
         for condition in self.colorConditions:
-            match(condition.type):
-                case 'column':
-                    columns = list(self.paintArrays(columns, condition))
-                case 'row':
-                    rows = columnsToRowsGen(columns)
-                    rows = list(self.paintArrays(rows, condition))
-                    columns = rowsToColumns(rows)
+            if condition.type == 'row':
+                rows = columnsToRows(arrays)
+                mesh = self.createColorMesh(condition, rows)
+                mesh = rowsToColumns(mesh)
+                yield mesh
+            
+            if condition.type == 'column':
+                yield self.createColorMesh(condition, arrays)
+            
+    def mergeMeshes(self, meshes, columnsAmount, columnSize):
+        finalMesh = emptyColumnsMesh(columnsAmount, columnSize)
 
-        return columns
+        for mesh in meshes:
+            for column, finalColumn in zip(mesh, finalMesh):
+                for item, finalItem in zip(column, finalColumn):
+                    if item.isEmpty():
+                        continue
+
+                    if not finalItem.color:
+                        finalItem.color = item.color
+                    
+                    if not finalItem.style:
+                        finalItem.style = item.style
+        
+        return finalMesh
+
+    def createMesh(self, columns, columnsAmount, columnSize):
+        meshes = self.createColorMeshes(columns) 
+        finalMesh = self.mergeMeshes(meshes, columnsAmount, columnSize)
+        return finalMesh
+
+
+    @returnList
+    def applyMeshToColumn(self, column, columnMesh):
+        for stringItem, colorItem in zip(column, columnMesh):
+            yield paintString(stringItem, colorItem.color, colorItem.style)
+
+    @returnList
+    def applyMesh(self, columns, mesh):
+        for column, columnMesh in zip(columns, mesh):
+            yield self.applyMeshToColumn(column, columnMesh)
+
 
 def main():
     cond = ColorCondition(
-        type='row',
+        type='column',
         args='item',
         method=lambda item: len(item) == 3,
         color='red',

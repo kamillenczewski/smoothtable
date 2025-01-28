@@ -1,23 +1,11 @@
-from table import createTable
-from color_condition import ColorCondition
-from painter import Painter
-
-# TO DO
-# priorities for conditions to have control
-# on which condition is more important than the other one
-
-# Painter.paint -> createPaintMesh -> array which has color is speicfic positions
-# and then we can jsut concat it so the condtion method will iterate through real objects
-# not strings
-
-# add possibility to create table with labels only in specfic location
-# for example having columns id, name, fcolor we want to display
-# id column but not the label for it
+from smoothtable.table import createTable
+from smoothtable.color_condition import ColorCondition
+from smoothtable.painter import Painter
 
 condition1 = ColorCondition(
     type='row',
     args='array',
-    method=lambda array: array[1].strip().endswith('a'),
+    method=lambda array: array[1][-1] == 'a',
     color='red',
     style='bold'
 )
@@ -25,7 +13,7 @@ condition1 = ColorCondition(
 condition2 = ColorCondition(
     type='column',
     args='array',
-    method=lambda array: array[0].strip() == 'Kamil',
+    method=lambda array: array[0] == 'Kamil',
     color='yellow',
     style='bold'
 )

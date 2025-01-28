@@ -1,5 +1,5 @@
 from typing import Iterable
-from constants import COLORS, TEXT_STYLES
+from .constants import COLORS, TEXT_STYLES
 
 class ColorCondition:
     ARGS = ('item', 'index', 'array', 'extra')
