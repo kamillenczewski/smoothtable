@@ -17,9 +17,16 @@ condition2 = ColorCondition(
     color='yellow',
     style='bold'
 )
+condition3 = ColorCondition(
+    type='row',
+    args='array',
+    method=lambda array: True,
+    color='green',
+    style='bold'
+)
 
 
-painter = Painter([condition1, condition2])
+painter = Painter([condition1, condition2, condition3])
 
 table = createTable(
     columnLabels=['Id', 'First name', 'Last name', 'Favourite Color'],

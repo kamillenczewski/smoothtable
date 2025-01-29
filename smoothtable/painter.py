@@ -6,6 +6,7 @@ from .utils import columnsToRowsGen, rowsToColumns, returnList, columnsToRows
 from .constants import COLORS, TEXT_STYLES
 
 
+EMPTY_MASK_ITEM = None
 
 
 class ColorItem:
@@ -13,8 +14,6 @@ class ColorItem:
         self.color = color
         self.style = style
 
-    def isEmpty(self):
-        return not self.color and not self.style
 
 def paintString(string, color, style):
     color = COLORS[color] if color else ""
@@ -24,23 +23,32 @@ def paintString(string, color, style):
 
     return string
 
-@returnList
-def emptyColumnMesh(size):
-    for _ in range(size):
-        yield ColorItem()
-
-@returnList
-def emptyColumnsMesh(columnsAmount, columnSize):
-    for _ in range(columnsAmount):
-        yield emptyColumnMesh(columnSize)
 
 
-class Painter:
-    def __init__(self, colorConditions: Iterable[ColorCondition]):
-        self.colorConditions = colorConditions        
+class MaskMerger:
+    @classmethod
+    def mergeColumnMasks(cls, masks, columnIndex, columnSize):
+        for itemIndex in range(columnSize):
+            maskItem = EMPTY_MASK_ITEM
 
+            for mask in masks:
+                maskItem = mask[columnIndex][itemIndex]
+
+                if maskItem != EMPTY_MASK_ITEM:
+                    break
+            
+            yield maskItem
+
+    @classmethod
+    def mergeMasks(cls, masks, columnsAmount, columnSize):
+        for columnIndex in range(columnsAmount):
+            yield cls.mergeColumnMasks(masks, columnIndex, columnSize)
+
+
+class ColorMaskCreator:
+    @classmethod
     @returnList
-    def createColumnColorMesh(self, condition, array):
+    def createColumnMask(cls, condition, array):
         extra = ExtraVariable()
 
         if condition.initMethod:
@@ -52,74 +60,46 @@ class Painter:
             if condition.method(*args):
                 yield ColorItem(condition.color, condition.style)
             else:
-                yield ColorItem()
+                yield EMPTY_MASK_ITEM
 
+    @classmethod
     @returnList
-    def createColorMesh(self, condition, columns):
+    def createMask(cls, condition, columns):
         for column in columns:
-            yield self.createColumnColorMesh(condition, column)
+            yield cls.createColumnMask(condition, column)
 
+    @classmethod
     @returnList
-    def createColorMeshes(self, arrays):
-        for condition in self.colorConditions:
+    def createMasks(cls, arrays, conditions):
+        for condition in conditions:
             if condition.type == 'row':
                 rows = columnsToRows(arrays)
-                mesh = self.createColorMesh(condition, rows)
-                mesh = rowsToColumns(mesh)
-                yield mesh
+                mask = cls.createMask(condition, rows)
+                mask = rowsToColumns(mask)
+                yield mask
             
             if condition.type == 'column':
-                yield self.createColorMesh(condition, arrays)
-            
-    def mergeMeshes(self, meshes, columnsAmount, columnSize):
-        finalMesh = emptyColumnsMesh(columnsAmount, columnSize)
+                yield cls.createMask(condition, arrays)
 
-        for mesh in meshes:
-            for column, finalColumn in zip(mesh, finalMesh):
-                for item, finalItem in zip(column, finalColumn):
-                    if item.isEmpty():
-                        continue
+class Painter:
+    def __init__(self, colorConditions: Iterable[ColorCondition]):
+        self.colorConditions = colorConditions        
 
-                    if not finalItem.color:
-                        finalItem.color = item.color
-                    
-                    if not finalItem.style:
-                        finalItem.style = item.style
-        
-        return finalMesh
 
-    def createMesh(self, columns, columnsAmount, columnSize):
-        meshes = self.createColorMeshes(columns) 
-        finalMesh = self.mergeMeshes(meshes, columnsAmount, columnSize)
-        return finalMesh
-
+    def createMask(self, columns, columnsAmount, columnSize):
+        masks = ColorMaskCreator.createMasks(columns, self.colorConditions)
+        finalMask = MaskMerger.mergeMasks(masks, columnsAmount, columnSize)
+        return finalMask
 
     @returnList
-    def applyMeshToColumn(self, column, columnMesh):
-        for stringItem, colorItem in zip(column, columnMesh):
-            yield paintString(stringItem, colorItem.color, colorItem.style)
+    def applyMaskToColumn(self, column, columnMask):
+        for stringItem, colorItem in zip(column, columnMask):
+            if colorItem:
+                yield paintString(stringItem, colorItem.color, colorItem.style)
+            else:
+                yield stringItem
 
     @returnList
-    def applyMesh(self, columns, mesh):
-        for column, columnMesh in zip(columns, mesh):
-            yield self.applyMeshToColumn(column, columnMesh)
-
-
-def main():
-    cond = ColorCondition(
-        type='column',
-        args='item',
-        method=lambda item: len(item) == 3,
-        color='red',
-        style='bold'
-    )
-
-    columns = [["asas", 'dajkijda', '1ga']]
-
-    painter = Painter([cond])
-    painted = painter.paint(columns)
-
-    print(painted)
-
-if __name__ == '__main__':
-    main()
+    def applyMask(self, columns, mask):
+        for column, columnMask in zip(columns, mask):
+            yield self.applyMaskToColumn(column, columnMask)

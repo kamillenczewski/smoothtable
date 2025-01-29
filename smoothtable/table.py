@@ -136,7 +136,7 @@ def createTable(columnLabels: Iterable[str],
     columnsAmount = len(columns)
     columnSize = len(columns[0])
 
-    colorMesh = painter.createMesh(columns, columnsAmount, columnSize)
+    colorMask = painter.createMask(columns, columnsAmount, columnSize)
 
     stringifiedColumns = stringifyColumns(columns)
 
@@ -148,7 +148,7 @@ def createTable(columnLabels: Iterable[str],
     stringifiedColumns = list(adjustColumns(stringifiedColumns, maxTextLentghs))
 
     if painter:
-       stringifiedColumns = painter.applyMesh(stringifiedColumns, colorMesh)
+       stringifiedColumns = painter.applyMask(stringifiedColumns, colorMask)
 
     areRowLabels = rowLabels != None
     areColumnLabels = columnLabels != None
