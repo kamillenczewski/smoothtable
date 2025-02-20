@@ -19,8 +19,8 @@ condition2 = ColorCondition(
 )
 condition3 = ColorCondition(
     type='row',
-    args='array',
-    method=lambda array: True,
+    args='',
+    method=lambda : True,
     color='green',
     style='bold'
 )
@@ -28,15 +28,24 @@ condition3 = ColorCondition(
 
 painter = Painter([condition1, condition2, condition3])
 
+# TO DO
+# Change constants to maje them one char because 
+# otherwise it is hard to understand what is actually going on here
+
+# 'Id', 'First name', 'Last name'Favourite Color
 table = createTable(
-    columnLabels=['Id', 'First name', 'Last name', 'Favourite Color'],
-    rowLabels=['Row1', 'Row2', 'Row3', 'Row4', 'Row5'],
-    rows=[
-        ["1", 'Kamil', 'Lenczewski', 'Blue'],
-        ["2", 'Anastazja', 'Kasprzyk', 'Red'],
-        ["3", 'Karolina', 'Olawska', 'Black'],
-        ["4", 'Adam', 'Lewandowski', 'Black'],
-        ["5", 'Hania', 'Granat', 'Red']
+    columnLabels={'1-4': 'Identification', '6-8': 'Favourite Color', '10-10': "AHA"},
+    columns=[
+        ['1', '2', '3'],
+        ['Kamil', 'Anastazja', 'Karolina'],
+        ['Lenczewski', 'Kasprzyk', 'Olawska'],
+        ['Blue', 'Red', 'Yellow'],
+        ['R1', 'R1', 'V1'],
+        ['R1', 'R1', 'V1'],
+        ['R1', 'R1', 'V1'],
+        ['R1', 'R1', 'V1'],
+        ['R1', 'R1', 'V1'],
+        ['R1', 'R1', 'V1']
     ],
     painter=painter
 )

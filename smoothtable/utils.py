@@ -6,6 +6,22 @@ def returnList(generator):
     
     return iteratedGen
 
+# consider using convertTo istead of ConvertTO
+class ConvertTo:
+    def __init__(self, *convertMethods):
+        self.convertMethods = convertMethods
+
+    def __call__(self, funcToConvert):
+        def converted(*args, **kwargs):
+            func = funcToConvert(*args, **kwargs)
+
+            for method in self.convertMethods:
+                func = method(func)
+
+            return func
+        
+        return converted
+
 # Columns to rows conversion
 
 @returnList
@@ -49,14 +65,20 @@ def stringifyColumnsGen(columns):
 def stringifyColumns(columns):
     return list(stringifyColumnsGen(columns))
 
-def leftConcatGen(lines, linesToAdd):
+@returnList
+def leftConcat(lines, linesToAdd):
     for lineToAdd, line in zip(linesToAdd, lines):
         yield lineToAdd + line
 
-def leftConcat(lines, linesToAdd):
-    return list(leftConcatGen(lines, linesToAdd))
+@returnList
+def rightConcat(lines, linesToAdd):
+    for lineToAdd, line in zip(linesToAdd, lines):
+        yield line + lineToAdd
 
-
+@returnList
+def rightConcat__(stringListsArray: list[list[str]]):
+    for row in columnsToRows(stringListsArray):
+        yield ''.join(row)
 
 # adjusting
 
@@ -69,6 +91,16 @@ def adjustLabelsGen(labels, lengths):
 
 def adjustLabels(labels, lengths):
     return list(adjustLabelsGen(labels, lengths))
+
+
+@ConvertTo(list)
+def adjustColumnLabelsAndRanges(labels, lengths):
+    if isinstance(lengths, int):
+        lengths = [lengths for _ in range(len(labels))]
+
+    for (label, range), wantedLength in zip(labels, lengths):
+        yield range, label.ljust(wantedLength, SPACE)
+
 
 @returnList
 def adjustColumnGen(column, stringLength):

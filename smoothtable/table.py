@@ -1,47 +1,18 @@
 from typing import Iterable
 
 from .utils import (
-    rowsToColumns, stringifyColumns, leftConcat, 
-    adjustColumns, adjustLabels, adjustLabelsGen
+    rowsToColumns, columnsToRows,
+    stringifyColumns, leftConcat, 
+    adjustColumns, adjustLabels, ConvertTo
 )
-
 from .painter import Painter
+from .constants import *
+from .column_labels import createColumnLabelsStringLines
+from .row_labels import createRowLabelsStringLines
+from .labels_normalization import normalize
 
-HORIZONTAL_LINE = '─'
-
-LEFT_VERTICAL_LINE = '│ '
-RIGHT_VERTICAL_LINE = ' │'
-CENTER_VERTICAL_LINE = ' │ '
-
-TOP_LEFT_CORNER = '╭─'
-TOP_RIGHT_CORNER = '─╮'
-
-BOTTOM_LEFT_CORNER = '╰─'
-BOTTOM_RIGHT_CORNER = '─╯'
-
-CENTER_CONDUIT = '─┼─'
-TOP_CENTER_CONDUIT = '─┬─'
-BOTTOM_CENTER_CONDUIT = '─┴─'
-LEFT_CONDUIT = '├─'
-RIGHT_CONDUIT = '─┤'
-
-NEW_LINE = '\n'
-SPACE = ' '
-
-def createColumnLabelsStringLines(labels, separationLines, areRowLabels):
-    if areRowLabels:
-        leftBottomCorner = CENTER_CONDUIT
-    else:
-        leftBottomCorner = LEFT_CONDUIT
-
-    segment1 = TOP_LEFT_CORNER + TOP_CENTER_CONDUIT.join(separationLines) + TOP_RIGHT_CORNER
-    segment2 = LEFT_VERTICAL_LINE + CENTER_VERTICAL_LINE.join(labels) + RIGHT_VERTICAL_LINE
-    segment3 = leftBottomCorner + CENTER_CONDUIT.join(separationLines) + RIGHT_CONDUIT
-
-    return [segment1, segment2, segment3]
-
-
-def maxStringLengthGen(columns):
+@ConvertTo(list)
+def getMaxStringLengths(columns):
     for column in columns:
         longestString = max(column, key=len)
         biggestLength = len(longestString)
@@ -50,26 +21,9 @@ def maxStringLengthGen(columns):
 
 
 
-def mergeLabelsAndColumnsGen(labels, columns):
-    for label, column in zip(labels, columns):
-        yield [label] + column
 
 def createRowString(rowItems):
     return LEFT_VERTICAL_LINE + CENTER_VERTICAL_LINE.join(rowItems) + RIGHT_VERTICAL_LINE
-
-
-
-
-def columnsToRow(columns, rowIndex):
-    for column in columns:
-        yield column[rowIndex]
-
-def columnsToRows(columns):
-    for rowIndex in range(len(columns[0])):
-        yield list(columnsToRow(columns, rowIndex))
-
-
-
 
 def createRowsStringLines(columns):
     rows = columnsToRows(columns)
@@ -79,10 +33,9 @@ def createRowsStringLines(columns):
 
 
 
+def createEndSegment(columnLengths, areRowLabels):
+    separationLines = [length * HORIZONTAL_LINE for length in columnLengths]
 
-
-
-def createEndSegment(separationLines, areRowLabels):
     if areRowLabels:
         leftBottomCorner = BOTTOM_CENTER_CONDUIT
     else:
@@ -105,57 +58,128 @@ def validateArgs(columnLabels, rowLabels, columns, rows, painter):
         if not all((length == len(columns[0]) for length in map(len, columns))):
             raise ValueError("All the columns should have the same size!")
         
-        if not len(rowLabels) == len(columns[0]):
+        if rowLabels and not len(rowLabels) == len(columns[0]):
             raise ValueError("The number of row labels should be the same as rows size!")
         
-        if not len(columnLabels) == len(columns):
+        if columnLabels and not len(columnLabels) == len(columns):
             raise ValueError("The number of column labels should be the same as columns size!")
 
     if rows:
         if not all((length == len(rows[0]) for length in map(len, rows))):
             raise ValueError("All the rows should have the same size!")
 
-        if not len(rowLabels) == len(rows):
+        if rowLabels and not len(rowLabels) == len(rows):
             raise ValueError("The number of row labels should be the same as rows size!")
     
-        if not len(columnLabels) == len(rows[0]):
+        if columnLabels and not len(columnLabels) == len(rows[0]):
             raise ValueError("The number of column labels should be the same as columns size!")
 
+@ConvertTo(list)
+def adjustColumnLabelsAndRanges(labels, lengths):
+    if isinstance(lengths, int):
+        lengths = [lengths for _ in range(len(labels))]
 
-def createTable(columnLabels: Iterable[str], 
+    for (label, range), wantedLength in zip(labels, lengths):
+        yield range, label.ljust(wantedLength, SPACE)
+        
+
+
+@ConvertTo(list)
+def adjustStrings(strings, lengths):
+    if isinstance(lengths, int):
+        lengths = [lengths for _ in range(len(strings))]
+
+    for string, wantedLength in zip(strings, lengths):
+        yield string.ljust(wantedLength, SPACE)
+
+@ConvertTo(list)
+def adjustColumns(stringsArray, lengths):
+    for column, length in zip(stringsArray, lengths):
+        yield adjustLabels(column, length)
+
+@ConvertTo(list)
+def addSpaceAtStartAndAtEnd(columns):
+    for column in columns:
+        yield [SPACE + item + SPACE for item in column]
+
+def addSpaceAtStartAndAtEndForLabels(labels):
+    return [SPACE + item + SPACE for item in labels]
+
+def adjustNeighboringLabelsLentghs(higherLayerLengths, higherLayerRanges, lowerLayerLengths):
+    pass
+
+def evaluateColumnLengthAndColumnLabelsLengths(columnLengths, columnLabelLengths, columnLabelRanges):
+    newColumnLabelLengths = []
+    newColumnLengths = columnLengths.copy()
+
+    # columnLengthsGroups = [columnLengths[leftRangeLimit:rightRangeLimit + 1] for leftRangeLimit, rightRangeLimit in columnLabelRanges]
+
+    for columnLabelLength, (leftRangeLimit, rightRangeLimit) in zip(columnLabelLengths, columnLabelRanges):
+        columnsInRangeAmount = rightRangeLimit - leftRangeLimit + 1
+
+        collectiveColumnsLength = sum(columnLengths[leftRangeLimit:rightRangeLimit + 1])
+        separatorsLength = len(CENTER_VERTICAL_LINE) * (columnsInRangeAmount - 1)
+
+        realColumnsLength = collectiveColumnsLength + separatorsLength
+
+
+        newColumnLabelLength = columnLabelLength
+
+        if realColumnsLength > columnLabelLength:
+            newColumnLabelLength = realColumnsLength
+        elif realColumnsLength < columnLabelLength:
+            newColumnLengths[leftRangeLimit] += columnLabelLength - realColumnsLength
+
+        newColumnLabelLengths.append(newColumnLabelLength)
+
+    return newColumnLengths, newColumnLabelLengths
+
+def createTable(columnLabels: Iterable[str] | dict[str, str], 
                 rowLabels=None, 
                 columns=None, 
                 rows=None, 
                 painter: Painter=None):
 
-    validateArgs(columnLabels, rowLabels, columns, rows, painter)
+    # validation
+    #validateArgs(columnLabels, rowLabels, columns, rows, painter)
 
+    # normalization and intitialization
+    # -------------- #
     if rows:
         columns = rowsToColumns(rows)
-
-    columnsAmount = len(columns)
-    columnSize = len(columns[0])
-
-    colorMask = painter.createMask(columns, columnsAmount, columnSize)
-
-    stringifiedColumns = stringifyColumns(columns)
-
-    labelsAndColumns = mergeLabelsAndColumnsGen(columnLabels, stringifiedColumns)
-    maxTextLentghs = list(maxStringLengthGen(labelsAndColumns))
-    separationLines = [length * HORIZONTAL_LINE for length in maxTextLentghs]
-
-    columnLabels = list(adjustLabels(columnLabels, maxTextLentghs))
-    stringifiedColumns = list(adjustColumns(stringifiedColumns, maxTextLentghs))
-
-    if painter:
-       stringifiedColumns = painter.applyMask(stringifiedColumns, colorMask)
 
     areRowLabels = rowLabels != None
     areColumnLabels = columnLabels != None
 
-    columnLabelsStringLines = createColumnLabelsStringLines(columnLabels, separationLines, areRowLabels)
+    columnsAmount = len(columns)
+    columnSize = len(columns[0])
+
+    columnLabels = normalize(columnLabels, columnsAmount)
+    columnLabelNames, columnLabelRanges = list(zip(*columnLabels))
+    # -------------- #
+
+    stringifiedColumns = stringifyColumns(columns)
+
+    stringifiedColumns = addSpaceAtStartAndAtEnd(stringifiedColumns)
+    columnLabelNames = addSpaceAtStartAndAtEndForLabels(columnLabelNames)
+    
+    columnLengths = getMaxStringLengths(stringifiedColumns)
+    columnLabelLengths = list(map(len, columnLabelNames))
+
+    columnLengths, columnLabelLengths = evaluateColumnLengthAndColumnLabelsLengths(columnLengths, columnLabelLengths, columnLabelRanges)
+    
+    columnLabelNames = adjustStrings(columnLabelNames, columnLabelLengths)
+    stringifiedColumns = adjustColumns(stringifiedColumns, columnLengths)
+
+    stringifiedColumns = adjustColumns(stringifiedColumns, columnLengths)
+
+    if painter:
+       colorMask = painter.createMask(columns, columnsAmount, columnSize)
+       stringifiedColumns = painter.applyMask(stringifiedColumns, colorMask)
+
+    columnLabelsStringLines = createColumnLabelsStringLines(columnLabelNames, columnLabelRanges, areRowLabels, columnLengths)
     rowsStringLines = createRowsStringLines(stringifiedColumns)
-    endSegment = createEndSegment(separationLines, areRowLabels)
+    endSegment = createEndSegment(columnLengths, areRowLabels)
     
     allLines = columnLabelsStringLines + rowsStringLines + [endSegment]
 
@@ -166,36 +190,33 @@ def createTable(columnLabels: Iterable[str],
     return NEW_LINE.join(allLines)
 
 
-def createRowLabelsStringLines(rowLabels):
-    def createRowLabelLines(labels):
-        for label in labels:
-            yield LEFT_VERTICAL_LINE + label + SPACE
+"""
+labels = [
+    ('Name', (0, 3)), 
+    ('__nolabel__', [4, 5]), 
+    ('XDD', (6, 6)), 
+    ('OLA', (7, 8)), 
+    ('__nolabel__', [9, 10])
+]
+"""
 
-    maxLength = len(max(rowLabels, key=len))
-    labels = adjustLabelsGen(rowLabels, maxLength)
 
-    spaceLines = [(maxLength + 3) * SPACE] * 2
+"""
+       ╭────┬────────────┬─────────────┬─────────────────╮
+       │ Id │ First name │ Last name   │ Favourite Color │
+╭──────┼────┼────────────┼─────────────┼─────────────────┤
+│ Row1 │ 1  │ Kamil      │ Lenczewski  │ Blue            │
+│ Row2 │ 2  │ Anastazja  │ Kasprzyk    │ Red             │
+│ Row3 │ 3  │ Karolina   │ Olawska     │ Black           │
+│ Row4 │ 4  │ Adam       │ Lewandowski │ Black           │
+│ Row5 │ 5  │ Hania      │ Granat      │ Red             │
+╰──────┴────┴────────────┴─────────────┴─────────────────╯
+"""
 
-    beginningLine = TOP_LEFT_CORNER + HORIZONTAL_LINE * maxLength
-    middleLines = list(createRowLabelLines(labels))
-    endLine = BOTTOM_LEFT_CORNER + HORIZONTAL_LINE * maxLength
 
-    allLines = spaceLines + [beginningLine] + middleLines + [endLine]
+"""
 
-    return allLines
-
-def main():
-    table = createTable(
-        columnLabels=['Id', 'First name', 'Last name', 'Favourite Color'],
-        rowLabels=['Row1', 'Row2', 'Row3'],
-        rows=[
-            ["1", 'Kamil', 'Lenczewski', 'Blue'],
-            ["2", 'Anastazja', 'Kasprzyk', 'Red'],
-            ["3", 'Karolina', 'Olawska', 'Black'],
-        ]
-    )
-
-    print(table)
-
-if __name__ == '__main__':
-    main()
+       ╭────┬────────────┬─────────────┬─────────────────╮
+       │ Id │ First name │ Last name   │ Favourite Color │
+╭──────┼────┼────────────┼─────────────┼─────────────────┤
+"""

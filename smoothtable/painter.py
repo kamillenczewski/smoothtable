@@ -2,7 +2,7 @@ from typing import Iterable
 
 from .color_condition import ColorCondition
 from .extra_variable import ExtraVariable
-from .utils import columnsToRowsGen, rowsToColumns, returnList, columnsToRows
+from .utils import rowsToColumns, returnList, columnsToRows
 from .constants import COLORS, TEXT_STYLES
 
 
