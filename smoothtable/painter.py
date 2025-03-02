@@ -82,9 +82,11 @@ class ColorMaskCreator:
                 yield cls.createMask(condition, arrays)
 
 class Painter:
-    def __init__(self, colorConditions: Iterable[ColorCondition]):
-        self.colorConditions = colorConditions        
+    def __init__(self, colorConditions: Iterable[ColorCondition]=None):
+        self.colorConditions = colorConditions if colorConditions else []     
 
+    def addColorCondition(self, colorCondition: ColorCondition):
+        self.colorConditions.append(colorCondition)
 
     def createMask(self, columns, columnsAmount, columnSize):
         masks = ColorMaskCreator.createMasks(columns, self.colorConditions)
