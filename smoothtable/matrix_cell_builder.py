@@ -23,9 +23,15 @@ def constructCell(content):
 def constructEmptyCell(length):
     return stringListToMatrix([SPACE * (length + 2)] * 3)
 
-def constructColumn(names, length):
+def constructColumn(names, length): 
+    """
+    Consider instead of using pure string - ColumnItem whmatriich could hold color and type property
+    and there attributes can be interpreted here to achive painting effect.
+    """
     topLine = CONDUIT_SYMBOL + length * HORIZONTAL_LINE + CONDUIT_SYMBOL
+
     middleLines = [VERTICAL_LINE + name + VERTICAL_LINE for name in names]
+
     bottomLine = CONDUIT_SYMBOL + length * HORIZONTAL_LINE + CONDUIT_SYMBOL
 
     return stringListToMatrix([topLine] + middleLines + [bottomLine])

@@ -1,4 +1,4 @@
-from smoothtable.table__concrete import createTable
+from smoothtable.table import createTable
 from smoothtable.color_condition import ColorCondition
 from smoothtable.painter import Painter
 
