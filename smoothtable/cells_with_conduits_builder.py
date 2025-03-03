@@ -9,7 +9,7 @@ class CellsWithConduitsBuilder:
 
         self.matrix = ExtendableMatrix(SPACE)
 
-        self.conduitPoints = set()
+        self.conduitPoints = list()#set()
 
         self.currentX = 0
         self.currentY = 0
@@ -75,7 +75,7 @@ class CellsWithConduitsBuilder:
 
 
     def _addConduitPoints(self, points):
-        self.conduitPoints.update(points)   
+        self.conduitPoints.extend(points)   
 
     def _createConduitCodes(self):
         for point in self.conduitPoints:
@@ -100,7 +100,9 @@ class CellsWithConduitsBuilder:
 
 
     def _fixConduits(self):
-        for point, code in zip(self.conduitPoints, self._createConduitCodes()):
+        codes = list(self._createConduitCodes())
+
+        for point, code in zip(self.conduitPoints, codes):
             x, y = point
             conduitChar = self.conduitCodesAndConduits[code]
             self.matrix.setItem(x, y, conduitChar)

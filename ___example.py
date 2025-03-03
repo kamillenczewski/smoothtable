@@ -36,3 +36,8 @@ table = SmoothtableBuilder()\
     .build()
 
 print(table)
+
+
+# Notice that if you want to concatenate two matrices 
+# then their conduit points can be overwritten by 
+# horizontal and vertical lines (border of cell)

@@ -106,6 +106,7 @@ class TableBuilder:
             self.appendRow(row)
             self.increaseCurrentY(2)
             self.setCurrentX(startX)
+            print(self.matrix)
 
         return self
             

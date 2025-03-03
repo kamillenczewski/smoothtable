@@ -7,7 +7,7 @@ from .column import Column
 
 
 class LengthAdjustManager:
-    def __init__(self, labelLayers, columns: list[Column]):
+    def __init__(self, labelLayers: list[list[Cell | EmptyCell]], columns: list[Column]):
         self.labelLayers = labelLayers
         self.columns = columns
 

@@ -42,9 +42,7 @@ def stringifyColumns(columns):
 @returnList
 def normalizeColumns(columns: list[list[str]]):
     for column in columns:
-        maxColumnLength = max(map(len, column))
-
-        yield Column(column, maxColumnLength)
+        yield Column(column)
 
 
 
@@ -112,6 +110,10 @@ class SmoothtableBuilder:
         self.columns = normalizeColumns(columns)
 
         return self
+
+    # TO DO
+    def addColumn(self):
+        pass
 
     def setRows(self, rows: list[list[str]]):
         if not all(len(row) == len(rows[0]) for row in rows):

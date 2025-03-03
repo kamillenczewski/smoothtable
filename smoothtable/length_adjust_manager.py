@@ -6,7 +6,7 @@ from .empty_cell import EmptyCell
 
 
 class LengthAdjustManager:
-    def __init__(self, labelLayers, columns):
+    def __init__(self, labelLayers: list[list[Cell | EmptyCell]], columns):
         self.labelLayers = labelLayers
         self.columns = columns
 

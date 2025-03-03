@@ -14,15 +14,16 @@ class Cell:
     @property
     def label(self):
         return self._label
-    
-    @label.setter
-    def label(self, value):
-        self._label = value
 
     @property
     def length(self):
         return len(self.label) + 2
     
+    @label.setter
+    def label(self, value):
+        self._label = value
+
+    # TO CHANGE TO RIGHT AND LEFT ADJUST...
     @length.setter
     def length(self, value):
         self.label = self.label.ljust(value)
