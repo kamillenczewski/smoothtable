@@ -2,13 +2,17 @@ from typing import Iterable
 
 from .utils import rowsToColumns, returnList, convertMatrix, forEachInMatrix
 from .painter import Painter
-from .labels_normalization import normalizeAndValidateLayers, normalizeAndValidateLayersGlobally, normalizeAndValidateSingleLayer
+from .labels_normalization import normalizeAndValidateLayers, validateLayersGlobally, normalizeAndValidateSingleLayer
 from .table_builder import TableBuilder
 from .length_adjust_manager import LengthAdjustManager
 from .constants import SPACE
 from .cell import Cell
+from .empty_cell import EmptyCell
 from .color_condition import ColorCondition
+from .column import Column
 
+from .___length_adjust_manager import LengthAdjustManager as _LengthAdjustManager
+from .___cells_builder import CellsBuilder
 
 def validateColumnsAndRows(columns, rows):
     if columns and rows:
@@ -35,6 +39,13 @@ def stringifyColumns(columns):
     for column in columns:
         yield list(map(str, column))
 
+@returnList
+def normalizeColumns(columns: list[list[str]]):
+    for column in columns:
+        maxColumnLength = max(map(len, column))
+
+        yield Column(column, maxColumnLength)
+
 
 
 def bothSidesIndentForColumns(columns):
@@ -55,21 +66,20 @@ def createTable(columnLabels: Iterable[str] | dict[str, str],
                 rows=None, 
                 painter: Painter=None):
     
-    validateColumnsAndRows(columns, rows)
-    columnLabels = normalizeAndValidateLayers(columnLabels)
+    validateColumnsAndRows(columns, rows) # + 
+    columnLabels = normalizeAndValidateLayers(columnLabels) # + 
 
-    if rows:
-        columns = rowsToColumns(rows)
+    if rows: # + 
+        columns = rowsToColumns(rows) # + 
 
-    columns = stringifyColumns(columns) 
-    # createColumns (METHOD) each list-like column is converted to Column Object
+    columns = stringifyColumns(columns)  # + 
 
-    if painter:
-       columns = painter.paint(columns)
+    if painter: # + 
+       columns = painter.paint(columns) # + 
 
-    columns = bothSidesIndentForColumns(columns)
+    columns = bothSidesIndentForColumns(columns) # + 
 
-    bothSidesIndentForLabels(columnLabels)
+    bothSidesIndentForLabels(columnLabels) # + 
 
     LengthAdjustManager(columnLabels, columns).execute()
 
@@ -83,31 +93,31 @@ def createTable(columnLabels: Iterable[str] | dict[str, str],
 
 class SmoothtableBuilder:
     def __init__(self):
-        self.columns: list[list[Cell]] = None
+        self.columns: list[Column] = None
         self.painter = Painter()
-        self.labelLayers: list[dict[str, str]] = None
+        self.labelLayers: list[dict[str, str]] = []
     
     
     def getColumnsAmount(self):
         return len(self.columns)
     
     def getColumnSize(self):
-        return len(self.columns[0])
+        return self.columns[0].length
     
 
     def setColumns(self, columns: list[list[str]]):
         if not all(len(column) == len(columns[0]) for column in columns):
             raise ValueError("All the columns should have the same size!")
 
-        self.columns = columns
+        self.columns = normalizeColumns(columns)
+
         return self
 
     def setRows(self, rows: list[list[str]]):
         if not all(len(row) == len(rows[0]) for row in rows):
             raise ValueError("All the rows should have the same size!")
 
-        self.columns = rowsToColumns(rows)
-        return self
+        return self.setColumns(rowsToColumns(rows))
     
     def addColorCondition(self, colorCondition: ColorCondition):
         self.painter.addColorCondition(colorCondition)
@@ -118,9 +128,33 @@ class SmoothtableBuilder:
         self.labelLayers.append(layer)
         return self
     
-    def build(self):
-        normalizeAndValidateLayersGlobally(self.labelLayers)
+    def _paintColumns(self):
+        if self.painter and False:
+            self.columns = self.painter.paint(self.columns, self.getColumnsAmount(), self.getColumnSize())
 
-        table = TableBuilder().appendRows(self.labelLayers).appendColumns(self.columns).build()
+    def _bothSidesIndentForColumns(self):
+        for column in self.columns:
+            column.rightInsert(SPACE)
+            column.leftInsert(SPACE)
+
     
-        return str(table)
+    def _bothSidesIndentForLabels(self):
+        def indentLabel(cell: Cell | EmptyCell):
+            if isinstance(cell, Cell):
+                cell.label = SPACE + cell.label + SPACE
+
+        forEachInMatrix(indentLabel, self.labelLayers)
+
+    def build(self):
+        #validateLayersGlobally(self.labelLayers)
+
+        self._bothSidesIndentForColumns()
+        self._bothSidesIndentForLabels()
+
+        self._paintColumns()
+
+        _LengthAdjustManager(self.labelLayers, self.columns).execute()
+
+        matrixTable = CellsBuilder().appendRows(self.labelLayers).appendColumns(self.columns).build()
+    
+        return str(matrixTable)

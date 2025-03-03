@@ -106,9 +106,7 @@ class Painter:
         for column, columnMask in zip(columns, mask):
             yield self.applyMaskToColumn(column, columnMask)
 
-    def paint(self, columns):
-        columnsAmount = len(columns)
-        columnSize = len(columns[0])
+    def paint(self, columns, columnsAmount, columnSize):
         mergedMask = self.createMask(columns, columnsAmount, columnSize)
         columns = self.applyMask(columns, mergedMask)
         return columns

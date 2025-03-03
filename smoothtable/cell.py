@@ -26,6 +26,3 @@ class Cell:
     @length.setter
     def length(self, value):
         self.label = self.label.ljust(value)
-
-    def copy(self):
-        return Cell(self.cellsRange, self._label)

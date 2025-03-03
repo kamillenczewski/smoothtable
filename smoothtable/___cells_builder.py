@@ -28,7 +28,7 @@ class CellsBuilder:
         if not isinstance(columns, Iterable):
             raise ValueError('Columns should be Iterable!')
         
-        for column in column:
+        for column in columns:
             if not isinstance(column, Column):
                 raise ValueError('Each column should be type of Column!')
 
@@ -41,22 +41,24 @@ class CellsBuilder:
                 raise ValueError('Each row should be Iterable!')
             
             for cell in row:
-                if not isinstance(cell, Cell) or not isinstance(cell, EmptyCell):
+                if not isinstance(cell, Cell) and not isinstance(cell, EmptyCell):
                     raise ValueError('Each row cell should be type of Cell or EmptyCell!')
 
     def appendColumns(self, columns: Iterable[Column]):
         self._validateColumns(columns)
 
-        self.builder.withConstructMethod(self.columnConstructMethod)
+        self.builder.withConstructMethod(self._columnConstructMethod)
 
         for column in columns:
             self.builder.append(column)
             self.builder.increaseCurrentX(column.length + 1)
 
+        return self
+
     def appendRows(self, rows: Iterable[Iterable[Cell | EmptyCell]]):
         self._validateRows(rows)
 
-        self.builder.withConstructMethod(self.cellConstructMethod)
+        self.builder.withConstructMethod(self._cellConstructMethod)
 
         startX = self.builder.getCurrentX()
 
@@ -67,8 +69,13 @@ class CellsBuilder:
             
             self.builder.increaseCurrentY(2)
             self.builder.setCurrentX(startX)
+        
+        return self
 
-    def columnConstructMethod(self, column: Column):
+    def build(self):
+        return self.builder.build()
+
+    def _columnConstructMethod(self, column: Column):
         topLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
         middleLines = [VERTICAL_LINE + name + VERTICAL_LINE for name in column.items]
         bottomLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
@@ -89,11 +96,11 @@ class CellsBuilder:
     
 
 
-    def cellConstructMethod(self, cell: Cell | EmptyCell):
+    def _cellConstructMethod(self, cell: Cell | EmptyCell):
         if isinstance(cell, Cell):
-            matrixItem = self.constructNamedCell(cell)
+            matrixItem = self._constructNamedCell(cell)
         elif isinstance(cell, EmptyCell):
-            matrixItem = self.constructEmptyCell(cell)
+            matrixItem = self._constructEmptyCell(cell)
 
         currentX = self.builder.getCurrentX()
         currentY = self.builder.getCurrentY()
@@ -107,7 +114,7 @@ class CellsBuilder:
         
         return matrixItem, conduitPoints
     
-    def constructNamedCell(self, cell: Cell):
+    def _constructNamedCell(self, cell: Cell):
         horizontalPerimeterChar = HORIZONTAL_LINE
         verticalPerimeterChar = VERTICAL_LINE
         conduitChar = CONDUIT_SYMBOL
@@ -118,5 +125,5 @@ class CellsBuilder:
 
         return stringListToMatrix([line1, line2, line3])
 
-    def constructEmptyCell(self, cell: EmptyCell):
+    def _constructEmptyCell(self, cell: EmptyCell):
         return stringListToMatrix([SPACE * (cell.length + 2)] * 3)

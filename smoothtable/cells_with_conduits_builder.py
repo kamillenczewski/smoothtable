@@ -16,7 +16,7 @@ class CellsWithConduitsBuilder:
 
         self.constructMethod = None
 
-        self.isHighPriority = False
+        self.isHighPriority = True
 
     def getCurrentX(self):
         return self.currentX
@@ -69,6 +69,7 @@ class CellsWithConduitsBuilder:
         return self
 
     def build(self):
+        print(str(self.matrix))
         self._fixConduits()
         return self.matrix
 

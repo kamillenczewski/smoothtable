@@ -75,7 +75,7 @@ def validateRangeIndexes(cells: list[list[Cell]]):
         if not all(index < lowerCellsListLength for index in lowerIndexesList):
             raise ValueError(f'Layer with index: {i} has reference to lower indexes ({lowerIndexesList}) which are not included in lower layer!')
 
-def normalizeAndValidateLayersGlobally(layers: Iterable[dict[str, str]]):
+def validateLayersGlobally(layers: Iterable[dict[str, str]]):
     if not isinstance(layers, Iterable):
         raise ValueError('Layers should be iterable!')
     
