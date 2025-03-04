@@ -1,25 +1,19 @@
 from .nodes import Node
-from .utils import returnList, iterateNeighbors, convertMatrix
-from .table_builder import TableBuilder
+from .utils import returnList, iterateNeighbors
 from .cell import Cell
 from .empty_cell import EmptyCell
+from .column import Column
 
 
 class LengthAdjustManager:
-    def __init__(self, labelLayers: list[list[Cell | EmptyCell]], columns):
+    def __init__(self, labelLayers: list[list[Cell | EmptyCell]], columns: list[Column]):
         self.labelLayers = labelLayers
         self.columns = columns
-
-    def _getMaxColumnLength(self, column):
-        return len(max(column, key=len))
 
     @returnList
     def _createColumnsLayer(self):
         for index, column in enumerate(self.columns):
-            length = self._getMaxColumnLength(column)
-            range = (index, index + 1)
-
-            yield EmptyCell(range, length)
+            yield EmptyCell((index, index + 1), column.length)
 
     def _connectNodes(self):
         # I'm so desprate here... 
@@ -68,8 +62,8 @@ class LengthAdjustManager:
                 
 
     def _adjustColumns(self):
-        for columnIndex, (column, length) in enumerate(zip(self.columns, self.columnsLengths)):
-            self.columns[columnIndex] = ([item.ljust(length) for item in column], length)
+        for column, length in zip(self.columns, self.columnsLengths):
+            column.adjustRight(length)
 
 
     def execute(self):
@@ -88,17 +82,3 @@ class LengthAdjustManager:
 
         self._adjustLabels()
         self._adjustColumns()
-
-if __name__ == '__main__':
-    labelLayers = [
-        [Cell((0, 3), 'Identification'), Cell((3, 5), 'Other')],
-        [Cell((0, 1), 'Id'), Cell((1, 2), 'First Name'), Cell((2, 3), 'Last Name'), Cell((3, 4), 'Favourite Color'), Cell((4, 5), 'Car')]
-    ]
-    columns = [['asas', 'assa'], ['asas', 'assa'], ['asas', 'assa'], ['asas', 'assa'], ['asas', 'assa']]
-
-    LengthAdjustManager(labelLayers, columns).execute()
-
-    labelsMatrix = convertMatrix(lambda cell: cell.label, labelLayers)
-
-    table = TableBuilder().appendRows(labelsMatrix).appendColumns(columns).build()
-    print(str(table))

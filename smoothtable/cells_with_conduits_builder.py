@@ -1,13 +1,13 @@
 from .extendable_matrix import ExtendableMatrix
+from .constants import SPACE, CONDUIT_SYMBOL
 
-SPACE = ' '
 
 class CellsWithConduitsBuilder:
     def __init__(self, isConduitMethod, conduitCodesAndConduits):
         self.isConduitMethod = isConduitMethod
         self.conduitCodesAndConduits = conduitCodesAndConduits
 
-        self.matrix = ExtendableMatrix(SPACE)
+        self.matrix = ExtendableMatrix(SPACE, highPriorityItems=[CONDUIT_SYMBOL])
 
         self.conduitPoints = list()#set()
 

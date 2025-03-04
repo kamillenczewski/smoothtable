@@ -1,16 +1,35 @@
+from typing import Iterable
+
+
 class ExtendableMatrix:
-    def __init__(self, defaultValue, width=None, height=None, rows=None):
+    def __init__(self, defaultValue, width=None, height=None, rows=None, highPriorityItems=None):
         height, width = self._normalizeHeightAndWidth(width, height)
         self._validateHeightAndWidth(width, height)
 
         self.defaultValue = defaultValue
 
         if rows:
+            self._validateRows(rows)
             self.rows = rows
         elif width and height:
             self.rows = [[self.defaultValue for _ in range(width)] for _ in range(height)]
         else:
             self.rows = [[defaultValue]]
+
+        self.highPriorityItems = highPriorityItems if highPriorityItems else list()
+
+    def _validateRows(self, rows):
+        if rows:
+            length = len(rows[0])
+
+        for row in rows:
+            if not isinstance(row, Iterable):
+                raise ValueError('Row must be Iterable!')
+            
+            if len(row) != length:
+                raise ValueError('Length of all rows should be the same!')
+            
+            
 
     @staticmethod
     def _normalizeHeightAndWidth(height, width):
@@ -82,7 +101,7 @@ class ExtendableMatrix:
 
         for currentX in range(x, lowerExtremePointX + 1):
             for currentY in range(y, lowerExtremePointY + 1):
-                if highPriority or self.rows[currentY][currentX] == self.defaultValue:
+                if (highPriority or self.rows[currentY][currentX] == self.defaultValue) and self.rows[currentY][currentX] not in self.highPriorityItems:
                     self.rows[currentY][currentX] = other.rows[currentY - y][currentX - x]
 
     def getItem(self, x, y):
