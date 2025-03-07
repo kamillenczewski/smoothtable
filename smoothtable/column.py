@@ -1,26 +1,47 @@
 from .constants import SPACE
+from .column_item import ColumnItem
+from .utils import returnList
+
 
 class Column:
-    def __init__(self, items):
-        self.items = items
-        self.length = max(map(len, self.items))
+    def __init__(self, items: list[ColumnItem]):
+        self.items = self._normalizeItems(items)
+        self._length = max(map(len, self.items))
 
-        self.adjustRight(self.length)
-        
+        self.adjustRight(self._length)
+    
+    @returnList
+    def _normalizeItems(self, items):
+        for item in items:
+            if isinstance(item, str):
+                yield ColumnItem(item)
+            elif isinstance(item, ColumnItem):
+                yield item
+            else:
+                raise ValueError('Inproper type of item! ColumnItem or str expected!')
+    
     @property
     def size(self):
         return len(self.items)
     
+    @property
+    def length(self):
+        return self._length
+
     def leftInsert(self, string):
-        self.length += len(string)
-        self.items = [string + item for item in self.items]
+        self._length += len(string)
+
+        for item in self.items:
+            item.content = string + item.content
 
     def rightInsert(self, string):
-        self.length += len(string)
-        self.items = [item + string for item in self.items]
+        self._length += len(string)
+
+        for item in self.items:
+            item.content = item.content + string
 
     def adjustRight(self, length, fillChar=SPACE):
-        if length <= len(self.items):
+        if length <= self._length:
             return
 
         if not isinstance(fillChar, str):
@@ -29,12 +50,14 @@ class Column:
         if len(fillChar) != 1:
             raise ValueError('fillChar must be made up of one character!')
 
-        self.length = length
+        self._length = length
 
-        self.items = [item.ljust(length, fillChar) for item in self.items]
+        for item in self.items:
+            item.content = item.content.ljust(length, fillChar)
+
 
     def adjustLeft(self, length, fillChar=SPACE):
-        if length <= len(self.items):
+        if length <= self._length:
             return
 
         if not isinstance(fillChar, str):
@@ -43,5 +66,16 @@ class Column:
         if len(fillChar) != 1:
             raise ValueError('fillChar must be made up of one character!')
         
-        self.length = length
-        self.items = [item.rjust(length, fillChar) for item in self.items]
+        self._length = length
+
+        for item in self.items:
+            item.content = item.content.rjust(length, fillChar)
+
+    def __setitem__(self, index, value):
+        self.items[index] = value
+
+    def __getitem__(self, index):
+        return self.items[index]
+    
+    def __len__(self):
+        return self.size

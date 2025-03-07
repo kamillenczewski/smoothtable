@@ -1,13 +1,15 @@
 from typing import Iterable
 
 from .cells_with_conduits_builder import CellsWithConduitsBuilder
-from .utils import isConduit
+from .utils import isConduit, returnList
 from .conduit_codes import CONDUIT_CODES_AND_CONDUITS
 from .cell import Cell
 from .empty_cell import EmptyCell
 from .column import Column
 from .constants import HORIZONTAL_LINE, CONDUIT_SYMBOL, VERTICAL_LINE, SPACE
 from .extendable_matrix import ExtendableMatrix
+from .column_item import ColumnItem
+from .string_color_and_style import getColor, getStyle, RESET_STR_FORMAT_TAG
 
 
 def stringToChars(string):
@@ -17,6 +19,12 @@ def stringListToMatrix(strings):
     return ExtendableMatrix(
         defaultValue=SPACE, 
         rows=[stringToChars(string) for string in strings]
+    )
+
+def stringsMatrixToExtendableMatrix(stringsMatrix: list[list[str]]):
+    return ExtendableMatrix(
+        defaultValue=SPACE, 
+        rows=stringsMatrix
     )
 
 
@@ -76,11 +84,16 @@ class CellsBuilder:
         return self.builder.build()
 
     def _columnConstructMethod(self, column: Column):
-        topLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
-        middleLines = [VERTICAL_LINE + name + VERTICAL_LINE for name in column.items]
-        bottomLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
+        topLine = bottomLine = [CONDUIT_SYMBOL] + column.length * [HORIZONTAL_LINE] + [CONDUIT_SYMBOL]
+        middleLines = self._createColumnMiddleLines(column)
 
-        matrixItem = stringListToMatrix([topLine] + middleLines + [bottomLine])
+        # topLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
+        # middleLines = [VERTICAL_LINE + item.content + VERTICAL_LINE for item in column.items]
+        # bottomLine = CONDUIT_SYMBOL + column.length * HORIZONTAL_LINE + CONDUIT_SYMBOL
+
+        # matrixItem = stringListToMatrix([topLine] + middleLines + [bottomLine])
+
+        matrixItem = ExtendableMatrix(defaultValue=SPACE, rows=[topLine] + middleLines + [bottomLine])
 
         currentX = self.builder.getCurrentX()
         currentY = self.builder.getCurrentY()
@@ -94,6 +107,23 @@ class CellsBuilder:
 
         return matrixItem, conduitPoints
     
+    @returnList
+    def _createColumnMiddleLines(self, column: Column):
+        for item in column.items:
+            yield self._createColumnMiddleLine(item)
+
+    @returnList
+    def _createColumnMiddleLine(self, item: ColumnItem):
+        yield VERTICAL_LINE
+        
+        yield item.content[0] + getColor(item.color) + getStyle(item.style)
+
+        for char in item.content[1:-1]:
+            yield char
+
+        yield item.content[-1] + RESET_STR_FORMAT_TAG
+
+        yield VERTICAL_LINE
 
 
     def _cellConstructMethod(self, cell: Cell | EmptyCell):

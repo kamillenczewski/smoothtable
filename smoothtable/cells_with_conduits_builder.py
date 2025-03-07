@@ -104,6 +104,7 @@ class CellsWithConduitsBuilder:
 
         for point, code in zip(self.conduitPoints, codes):
             x, y = point
-            conduitChar = self.conduitCodesAndConduits[code]
-            self.matrix.setItem(x, y, conduitChar)
+            if code in self.conduitCodesAndConduits:
+                conduitChar = self.conduitCodesAndConduits[code]
+                self.matrix.setItem(x, y, conduitChar)
             

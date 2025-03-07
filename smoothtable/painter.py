@@ -2,11 +2,8 @@ from typing import Iterable
 
 from .color_condition import ColorCondition
 from .extra_variable import ExtraVariable
-from .utils import rowsToColumns, returnList, columnsToRows
-from .constants import COLORS, TEXT_STYLES
-
-
-EMPTY_MASK_ITEM = None
+from .utils import returnList, columnsToRows
+from .column import Column
 
 
 class ColorItem:
@@ -15,98 +12,152 @@ class ColorItem:
         self.style = style
 
 
-def paintString(string, color, style):
-    color = COLORS[color] if color else ""
-    style = TEXT_STYLES[style] if style else ""
+def transposeMatrix(matrix):
+    return columnsToRows(matrix)
 
-    string = color + style + "{}\033[0m".format(string)
+class ConditionedMatrixBuilder:
+    def __init__(self):
+        self.matrix: list[Column] = None
+        self.condition: ColorCondition = None
 
-    return string
+    def setMatrix(self, matrix):
+        self.matrix = matrix
+        return self
+    
+    def setCondition(self, condition):
+        self.condition = condition
+        return self
 
-
-
-class MaskMerger:
-    @classmethod
-    def mergeColumnMasks(cls, masks, columnIndex, columnSize):
-        for itemIndex in range(columnSize):
-            maskItem = EMPTY_MASK_ITEM
-
-            for mask in masks:
-                maskItem = mask[columnIndex][itemIndex]
-
-                if maskItem != EMPTY_MASK_ITEM:
-                    break
-            
-            yield maskItem
-
-    @classmethod
-    def mergeMasks(cls, masks, columnsAmount, columnSize):
-        for columnIndex in range(columnsAmount):
-            yield cls.mergeColumnMasks(masks, columnIndex, columnSize)
-
-
-class ColorMaskCreator:
-    @classmethod
     @returnList
-    def createColumnMask(cls, condition, array):
+    def _createBoolColumn(self, array):
         extra = ExtraVariable()
 
-        if condition.initMethod:
-            condition.initMethod(array, extra)
+        if self.condition.initMethod:
+            self.condition.initMethod(array, extra)
             
         for index, item in enumerate(array):
-            args = [locals()[argName] for argName in condition.args]
+            args = [locals()[argName] for argName in self.condition.args]
 
-            if condition.method(*args):
-                yield ColorItem(condition.color, condition.style)
-            else:
-                yield EMPTY_MASK_ITEM
+            yield self.condition.method(*args)
 
-    @classmethod
     @returnList
-    def createMask(cls, condition, columns):
-        for column in columns:
-            yield cls.createColumnMask(condition, column)
+    def _createBoolMatrix(self):
+        for column in self.matrix:
+            yield self._createBoolColumn(column)
 
-    @classmethod
+
+    def build(self):
+        if self.condition.type == 'row':
+            self.matrix = transposeMatrix(self.matrix)
+            self.matrix = self._createBoolMatrix()
+            self.matrix = transposeMatrix(self.matrix)
+
+        if self.condition.type == 'column':
+            self.matrix = self._createBoolMatrix()
+
+        return self.matrix
+
+class MatricesOverlayExecutor:
+    def __init__(self, emptyItem, columnsAmount, columnSize, matrices: list[list[Column]]):
+        self.emptyItem = emptyItem
+        self.columnsAmount = columnsAmount
+        self.columnSize = columnSize
+        self.matrices = matrices
+
     @returnList
-    def createMasks(cls, arrays, conditions):
-        for condition in conditions:
-            if condition.type == 'row':
-                rows = columnsToRows(arrays)
-                mask = cls.createMask(condition, rows)
-                mask = rowsToColumns(mask)
-                yield mask
+    def overlayForColumn(self, columnIndex):
+        for itemIndex in range(self.columnSize):
+            currentItem = self.emptyItem
+
+            for matrix in self.matrices:
+                currentItem = matrix[columnIndex][itemIndex]
+
+                if currentItem != self.emptyItem:
+                    break
             
-            if condition.type == 'column':
-                yield cls.createMask(condition, arrays)
+            yield currentItem
+
+    @returnList
+    def overlayForMatrix(self):
+        for columnIndex in range(self.columnsAmount):
+            yield self.overlayForColumn(columnIndex)
+
+
 
 class Painter:
-    def __init__(self, colorConditions: Iterable[ColorCondition]=None):
-        self.colorConditions = colorConditions if colorConditions else []     
+    def __init__(self, colorConditions: Iterable[ColorCondition]=None, emptyItem=None):
+        self.columnsAmount = None
+        self.columnSize = None
+        self.matrix = None
+        self.contentMatrix = None
 
-    def addColorCondition(self, colorCondition: ColorCondition):
+        self.colorConditions = colorConditions if colorConditions else list()  
+        self.emptyItem = emptyItem
+
+    @returnList
+    def _columnObjectsToLists(self, columns: list[Column]):
+        for column in columns:
+            yield column.items
+
+    @returnList
+    def _createContentMatrix(self):
+        for column in self.matrix:
+            yield [item.content.strip() for item in column]
+
+    @returnList
+    def _createConditionedMatrices(self):
+        for condition in self.colorConditions:
+            yield ConditionedMatrixBuilder().setMatrix(self.contentMatrix).setCondition(condition).build()
+
+
+    @returnList
+    def _fillBoolMatrix(self, boolMatrix, valueForTrue, valueForFalse):
+        for column in boolMatrix:
+            yield [valueForTrue if TrueOrFalse else valueForFalse for TrueOrFalse in column]
+
+    def _createStyleMask(self, boolMatrix, condition: ColorCondition):
+        return self._fillBoolMatrix(boolMatrix, condition.style, self.emptyItem)
+    
+    def _createColorMask(self, boolMatrix, condition: ColorCondition):
+        return self._fillBoolMatrix(boolMatrix, condition.color, self.emptyItem) 
+
+
+
+
+    def _applyMask(self, mask, applyMethod):
+        for i in range(self.columnsAmount):
+            for j in range(self.columnSize):
+                applyMethod(self.matrix[i][j], mask[i][j])
+
+    def _applyColorMask(self, mask):
+        def applyMethod(columnItem, color):
+            columnItem.color = color
+
+        return self._applyMask(mask, applyMethod)
+
+    def _applyStyleMask(self, mask):
+        def applyMethod(columnItem, style):
+            columnItem.style = style
+
+        return self._applyMask(mask, applyMethod)
+
+    def addColorCondition(self, colorCondition):
         self.colorConditions.append(colorCondition)
 
-    def createMask(self, columns, columnsAmount, columnSize):
-        masks = ColorMaskCreator.createMasks(columns, self.colorConditions)
-        finalMask = MaskMerger.mergeMasks(masks, columnsAmount, columnSize)
-        return finalMask
+    def paint(self, matrix, columnsAmount, columnSize):
+        self.columnsAmount = columnsAmount
+        self.columnSize = columnSize
 
-    @returnList
-    def applyMaskToColumn(self, column, columnMask):
-        for stringItem, colorItem in zip(column, columnMask):
-            if colorItem:
-                yield paintString(stringItem, colorItem.color, colorItem.style)
-            else:
-                yield stringItem
+        self.matrix = self._columnObjectsToLists(matrix)
+        self.contentMatrix = self._createContentMatrix()
 
-    @returnList
-    def applyMask(self, columns, mask):
-        for column, columnMask in zip(columns, mask):
-            yield self.applyMaskToColumn(column, columnMask)
+        conditionedMatrices = self._createConditionedMatrices()
 
-    def paint(self, columns, columnsAmount, columnSize):
-        mergedMask = self.createMask(columns, columnsAmount, columnSize)
-        columns = self.applyMask(columns, mergedMask)
-        return columns
+        styleMasks = [self._createStyleMask(conditionedMatrix, condition) for conditionedMatrix, condition in zip(conditionedMatrices, self.colorConditions)]
+        colorMasks = [self._createColorMask(conditionedMatrix, condition) for conditionedMatrix, condition in zip(conditionedMatrices, self.colorConditions)]
+
+        mergedStyleMask = MatricesOverlayExecutor(self.emptyItem, self.columnsAmount, self.columnSize, styleMasks).overlayForMatrix()
+        mergedColorMask = MatricesOverlayExecutor(self.emptyItem, self.columnsAmount, self.columnSize, colorMasks).overlayForMatrix()
+
+        self._applyColorMask(mergedColorMask)
+        self._applyStyleMask(mergedStyleMask)

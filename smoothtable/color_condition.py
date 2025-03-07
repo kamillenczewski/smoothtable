@@ -1,5 +1,5 @@
 from typing import Iterable
-from .constants import COLORS, TEXT_STYLES
+from .string_color_and_style import COLORS, TEXT_STYLES
 
 class ColorCondition:
     ARGS = ('item', 'index', 'array', 'extra')
@@ -57,18 +57,3 @@ class ColorCondition:
                              f"Possible text styles: {cls.stringifyItems(TEXT_STYLES.keys())}.")
 
         return style
-
-
-def main():
-    condition = ColorCondition(
-        type='row',
-        args='as',
-        method=lambda item: len(item) == 3,
-        color='red',
-        style='bold'
-    )
-
-    print(condition.__dict__)
-
-if __name__ == '__main__':
-    main()

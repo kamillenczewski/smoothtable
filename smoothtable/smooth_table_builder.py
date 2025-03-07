@@ -8,7 +8,7 @@ from .cell import Cell
 from .empty_cell import EmptyCell
 from .color_condition import ColorCondition
 from .column import Column
-from .length_adjust_manager import LengthAdjustManager as _LengthAdjustManager
+from .length_adjust_manager import LengthAdjustManager
 from .cells_builder import CellsBuilder
 
 
@@ -17,14 +17,14 @@ class SmoothtableBuilder:
         self.columns: list[Column] = []
         self.painter = Painter()
         self.labelLayers: list[dict[str, str]] = []
-    
+
     def _normalizeColumn(self, column):
         if isinstance(column, Iterable):
             return Column(column)
         elif isinstance(column, Column):
             return column
         else:
-            raise ValueError('column has inproper!')        
+            raise ValueError('column has inproper type!')        
 
     @returnList
     def _normalizeColumns(self, columns):
@@ -37,7 +37,7 @@ class SmoothtableBuilder:
         return len(self.columns)
     
     def getColumnSize(self):
-        return self.columns[0].length
+        return self.columns[0].size
     
 
     def setColumns(self, columns: list[list[str]]):
@@ -48,11 +48,10 @@ class SmoothtableBuilder:
 
         return self
 
-    # TO DO
     def addColumn(self, column):
         column = self._normalizeColumn(column)
 
-        if self.columns and self.columns[0].size != column.size:
+        if self.columns and self.getColumnSize() != column.size:
             raise ValueError('Each added column should have the same size!')
 
         self.columns.append(column)
@@ -75,8 +74,8 @@ class SmoothtableBuilder:
         return self
     
     def _paintColumns(self):
-        if self.painter and False:
-            self.columns = self.painter.paint(self.columns, self.getColumnsAmount(), self.getColumnSize())
+        if self.painter:
+            self.painter.paint(self.columns, self.getColumnsAmount(), self.getColumnSize())
 
     def _bothSidesIndentForColumns(self):
         for column in self.columns:
@@ -102,7 +101,7 @@ class SmoothtableBuilder:
 
         self._paintColumns()
 
-        _LengthAdjustManager(self.labelLayers, self.columns).execute()
+        LengthAdjustManager(self.labelLayers, self.columns).execute()
 
         matrixTable = CellsBuilder().appendRows(self.labelLayers).appendColumns(self.columns).build()
     
