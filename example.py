@@ -26,6 +26,8 @@ condition3 = ColorCondition(
 
 
 table = (SmoothtableBuilder()
+    .putLabelLayer({'0-2': 'All'})
+
     .putLabelLayer({'0-3': 'Identification', 
                     '3-5': 'Other'})
                     
