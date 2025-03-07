@@ -1,5 +1,3 @@
-<img width="538" alt="image" src="https://github.com/user-attachments/assets/62819fb5-62ca-49cc-8482-2c9f5f4c3a8c" /># smoothtable
-
 My work was inspired by https://github.com/nirum/tableprint 
 
 ## 🔎 Table of Contents
