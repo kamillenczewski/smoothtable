@@ -2,18 +2,9 @@ from typing import Iterable
 
 from .color_condition import ColorCondition
 from .extra_variable import ExtraVariable
-from .utils import returnList, columnsToRows
+from .utils import returnList, transposeMatrix
 from .column import Column
 
-
-class ColorItem:
-    def __init__(self, color=None, style=None):
-        self.color = color
-        self.style = style
-
-
-def transposeMatrix(matrix):
-    return columnsToRows(matrix)
 
 class ConditionedMatrixBuilder:
     def __init__(self):

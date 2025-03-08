@@ -5,33 +5,33 @@ from .extra_variable import ExtraVariable
 
 
 class SolidMatrix:
-    def __init__(self, defaultValue, itemsType=None, width=None, height=None, arrays=None):
-        self.defaultValue = defaultValue
-        self.itemsType = itemsType
-
+    def __init__(self, defaultValue, type=None, width=None, height=None, rows=None):
+        self.type = type
         self.height, self.width = self._normalizeHeightAndWidth(width, height)
         self._validateHeightAndWidth(width, height)
 
-        if arrays:
-            self._validateArrays(arrays)
+        self.defaultValue = defaultValue
 
-            self.arrays = arrays
-            self.height = len(arrays[0])
-            self.width = len(arrays)
+        if rows:
+            self._validateRows(rows)
+
+            self.rows = rows
+            self.height = len(rows)
+            self.width = len(rows[0])
         elif width and height:
-            self.arrays = [[self.defaultValue for _ in range(self.height)] for _ in range(self.width)]
+            self.rows = [[self.defaultValue for _ in range(width)] for _ in range(height)]
         else:
             raise ValueError('There is no passed arguments which the matrix can build be build of!')
 
-    def _validateArrays(self, arrays):
-        if arrays:
-            length = len(arrays[0])
+    def _validateRows(self, rows):
+        if rows:
+            length = len(rows[0])
 
-        for array in arrays:
-            if not isinstance(array, Iterable):
+        for row in rows:
+            if not isinstance(row, Iterable):
                 raise ValueError('Row must be Iterable!')
             
-            if len(array) != length:
+            if len(row) != length:
                 raise ValueError('Length of all rows should be the same!')
             
     @staticmethod
@@ -69,38 +69,36 @@ class SolidMatrix:
             raise ValueError(f'y coordinate should be in range [0, {self.height})!')
 
     def _validateItem(self, item):
-        if self.itemsType and not isinstance(item, self.itemsType):
-                raise ValueError(f"matrix's item should have type: {self.itemsType}!")
+        if self.type and not isinstance(item, self.type):
+                raise ValueError(f"matrix's item should have type: {self.type}!")
             
         return True
 
-
-
     def getItem(self, x, y):
         self._validateCoordinates(x, y)
-        return self.arrays[y][x]
+        return self.rows[y][x]
     
     def setItem(self, x, y, item):
         self._validateCoordinates(x, y)
         self._validateItem(item)
-        self.arrays[y][x] = item
+        self.rows[y][x] = item
 
     def __str__(self):
-        return '\n' + '\n'.join(''.join(map(str, array)) for array in self.arrays) + '\n'
+        return '\n' + '\n'.join(''.join(map(str, row)) for row in self.rows) + '\n'
 
     @returnList
     def convert(self, convertMethod):
-        for array in self.arrays:
-            yield [convertMethod(item) for item in array]
+        for row in self.rows:
+            yield [convertMethod(item) for item in row]
 
     def forEach(self, forEachMethod):
-        for array in self.arrays:
-            for item in array:
+        for row in self.rows:
+            for item in row:
                 forEachMethod(item)
 
     def fullFor(self, method):
         extra = ExtraVariable()
 
-        for array in self.arrays:
-            for index, item in enumerate(array):
-                method(extra, array, index, item)
+        for row in self.rows:
+            for index, item in enumerate(row):
+                method(extra, row, index, item)

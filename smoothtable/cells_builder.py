@@ -121,7 +121,10 @@ class CellsBuilder:
         for char in item.content[1:-1]:
             yield char
 
-        yield item.content[-1] + RESET_STR_FORMAT_TAG
+        if not item.color and not item.style:
+            yield item.content[-1]
+        else:
+            yield item.content[-1] + RESET_STR_FORMAT_TAG
 
         yield VERTICAL_LINE
 

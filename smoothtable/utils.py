@@ -30,31 +30,21 @@ def forEachInMatrix(function, matrix):
         for item in list:
             function(item)
 
-
 @returnList
-def rowsToColumn(rows, columnIndex):
-    for row in rows:
-        yield row[columnIndex]
-
-@returnList
-def rowsToColumns(rows):
-    for rowIndex in range(len(rows[0])):
-        yield rowsToColumn(rows, rowIndex)
-
-
-@returnList
-def columnsToRow(columns, rowIndex):
-    for column in columns:
-        yield column[rowIndex]
-
-@returnList
-def columnsToRows(columns):
-    for rowIndex in range(len(columns[0])):
-        yield columnsToRow(columns, rowIndex)
-
+def transposeMatrix(matrix):
+    for arrayIndex in range(len(matrix[0])):
+        yield [array[arrayIndex] for array in matrix]
 
 def isConduit(char):
     if char == CONDUIT_SYMBOL:
         return True
 
     return char in CONDUITS
+
+def writeFile(path, content):
+    with open(path, 'w', encoding='utf-8') as file:
+        file.write(content)
+
+def readFile(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        return file.read()

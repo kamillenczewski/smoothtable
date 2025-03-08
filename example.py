@@ -1,5 +1,6 @@
-from smoothtable_copy.smooth_table_builder import SmoothtableBuilder
-from smoothtable_copy.color_condition import ColorCondition
+from smoothtable.smooth_table_builder import SmoothtableBuilder
+from smoothtable.color_condition import ColorCondition
+
 
 condition1 = ColorCondition(
     type='row',
@@ -47,26 +48,6 @@ table = (SmoothtableBuilder()
     .addColorCondition(condition1)
     .addColorCondition(condition3)
 
+    .setLabelsAlignment('center')
+
     .build())
-
-
-print(table)
-
-
-
-
-# TO DO
-# istead of methods columnsToRows and rowsToColumns
-# we can just create method transpose
-
-# Enum for condition type row or column
-
-# create matrix class to manage the painter functionality
-
-
-
-# class ColorCondition:
-#     ARGS = ('item', 'index', 'array', 'extra')
-#     ARGS_TYPES = (str, Iterable)
-#     CONDITION_TYPES = ('row', 'column')
-# All the constant args convert to enum types

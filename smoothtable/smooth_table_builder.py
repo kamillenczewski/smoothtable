@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from .utils import rowsToColumns, forEachInMatrix, returnList
+from .utils import forEachInMatrix, returnList, transposeMatrix
 from .painter import Painter
 from .labels_normalization import validateLayersGlobally, normalizeAndValidateSingleLayer
 from .constants import SPACE
@@ -10,6 +10,7 @@ from .color_condition import ColorCondition
 from .column import Column
 from .length_adjust_manager import LengthAdjustManager
 from .cells_builder import CellsBuilder
+from .text_alignment import TextAlignment
 
 
 class SmoothtableBuilder:
@@ -17,6 +18,8 @@ class SmoothtableBuilder:
         self.columns: list[Column] = []
         self.painter = Painter()
         self.labelLayers: list[dict[str, str]] = []
+
+        self._labelsAlignment = TextAlignment.LEFT
 
     def _normalizeColumn(self, column):
         if isinstance(column, Iterable):
@@ -62,7 +65,7 @@ class SmoothtableBuilder:
         if not all(len(row) == len(rows[0]) for row in rows):
             raise ValueError("All the rows should have the same size!")
 
-        return self.setColumns(rowsToColumns(rows))
+        return self.setColumns(transposeMatrix(rows))
     
     def addColorCondition(self, colorCondition: ColorCondition):
         self.painter.addColorCondition(colorCondition)
@@ -73,6 +76,12 @@ class SmoothtableBuilder:
         self.labelLayers.append(layer)
         return self
     
+    def setLabelsAlignment(self, type: str):
+        self._labelsAlignment = TextAlignment[type.strip().upper()]
+        return self
+        
+
+
     def _paintColumns(self):
         if self.painter:
             self.painter.paint(self.columns, self.getColumnsAmount(), self.getColumnSize())
@@ -82,13 +91,29 @@ class SmoothtableBuilder:
             column.rightInsert(SPACE)
             column.leftInsert(SPACE)
 
-    
     def _bothSidesIndentForLabels(self):
         def indentLabel(cell: Cell | EmptyCell):
             if isinstance(cell, Cell):
                 cell.label = SPACE + cell.label + SPACE
 
         forEachInMatrix(indentLabel, self.labelLayers)
+
+    def _alignLabels(self):
+        
+        def align(cell: Cell | EmptyCell):
+            if isinstance(cell, Cell):
+                length = len(cell.label)
+                content = cell.label.strip()
+
+                match(self._labelsAlignment): 
+                    case TextAlignment.LEFT:
+                        cell.label = SPACE + content.ljust(length - 1)
+                    case TextAlignment.CENTER:
+                        cell.label = content.center(length)
+                    case TextAlignment.RIGHT:
+                        cell.label = content.rjust(length - 1) + SPACE
+
+        forEachInMatrix(align, self.labelLayers)
 
     def build(self):
         #validateLayersGlobally(self.labelLayers)
@@ -102,6 +127,8 @@ class SmoothtableBuilder:
         self._paintColumns()
 
         LengthAdjustManager(self.labelLayers, self.columns).execute()
+
+        self._alignLabels()
 
         matrixTable = CellsBuilder().appendRows(self.labelLayers).appendColumns(self.columns).build()
     
