@@ -69,7 +69,6 @@ class CellsWithConduitsBuilder:
         return self
 
     def build(self):
-        print(str(self.matrix))
         self._fixConduits()
         return self.matrix
 
@@ -100,11 +99,8 @@ class CellsWithConduitsBuilder:
 
 
     def _fixConduits(self):
-        codes = list(self._createConduitCodes())
-
-        for point, code in zip(self.conduitPoints, codes):
+        for point, code in zip(self.conduitPoints, self._createConduitCodes()):
             x, y = point
-            if code in self.conduitCodesAndConduits:
-                conduitChar = self.conduitCodesAndConduits[code]
-                self.matrix.setItem(x, y, conduitChar)
+            conduitChar = self.conduitCodesAndConduits[code]
+            self.matrix.setItem(x, y, conduitChar)
             

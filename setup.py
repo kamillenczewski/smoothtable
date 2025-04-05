@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='smoothtable',
     url='https://github.com/kamillenczewski/smoothtable',
-    version='0.0.2',
+    version='0.0.3',
 
     author='Kamil Lenczewski',
     author_email='kamillenczewski2@gmail.com',

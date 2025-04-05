@@ -51,3 +51,5 @@ table = (SmoothtableBuilder()
     .setLabelsAlignment('center')
 
     .build())
+
+print(table)
